@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+langgraph
+langchain
+langchain-community
+langchain-openai
+sqlalchemy
+asyncpg
+pgvector
+redis
+pydantic
+pydantic-settings
+python-dotenv
+openai
+httpx
+sentence-transformers
