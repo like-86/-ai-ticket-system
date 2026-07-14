@@ -15,5 +15,5 @@ class ChatResponse(BaseModel):
 
 @router.post("",response_model=ChatResponse)
 def chat(request: ChatRequest):
-    reply = run_agent(request.message)
-    return ChatResponse(reply=reply)
+    result = run_agent(request.message)
+    return ChatResponse(reply=result["reply"],intent =result["intent"] )

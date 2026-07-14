@@ -7,3 +7,8 @@ class RetrievalAgent(BaseAgent):
         "退款": "退款政策：购买后7天内可申请全额退款，退款将在3-5个工作日原路返回",
         "价格": "定价方案：基础版免费，专业版99元/月，企业版联系销售定制",
     }
+    def search(self,query: str) -> str:
+        for keyword , answer in self.knowledge_base.items():
+            if keyword in query:
+                return answer
+        return "未找到相关答案，请转人工客服处理"
