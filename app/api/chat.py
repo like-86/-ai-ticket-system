@@ -1,7 +1,5 @@
 from  fastapi import  APIRouter
 from pydantic import BaseModel
-from app.agents.base_agent import BaseAgent
-from app.agents.intent_agent import IntentAgent
 from app.graph.workflow import run_agent
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])

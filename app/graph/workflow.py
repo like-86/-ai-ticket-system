@@ -1,8 +1,16 @@
-from typing import Literal
+from app.tools.mcp_server import TOOLS
 from langgraph.graph import StateGraph, MessagesState
 from app.agents.intent_agent import IntentAgent
 from app.agents.base_agent import BaseAgent
-from app.agents.retrieval_agent import RetrievalAgent
+
+
+
+# 工具查找函数
+def call_tool(name:str,**kwargs)->dict:
+    for tool in TOOLS:
+        if tool["name"]==name:
+            return tool["handler"](**kwargs)
+    raise ValueError(f"工具{name}不存在")
 
 #定义状态
 class AgentState(MessagesState):
@@ -10,15 +18,17 @@ class AgentState(MessagesState):
     user_message: str=""    #用户原始消息
     final_reply: str=""        #最终回复
     retrieved_context: str = ""
-#定义节点
 
+#定义节点
 def classify_intent(state: AgentState) -> dict:
     agent=IntentAgent()
     intent = agent.classify(state["user_message"])
     return {"intent":intent}
 
 def handle_ticket(state: AgentState) -> dict:
-    reply = f"[工单已创建]已收到您的请求:{state['user_message']}"
+    result = call_tool("create_ticket",title =f"用户请求:{state['user_message']}",description=state['user_message'])
+
+    reply = f"[工单已创建] 工单编号{result['id']}，我们会尽快处理。您的请求：{state['user_message']}"
     return {"final_reply":reply}
 
 def handle_inquiry(state: AgentState) -> dict:
@@ -32,9 +42,8 @@ def handle_chat(state: AgentState) -> dict:
     return {"final_reply":reply}
 
 def retrieve_knowledge(state: AgentState) -> dict:
-    agent= RetrievalAgent()
-    context = agent.search(state["user_message"])
-    return {"retrieved_context":context}
+    context = call_tool("search_knowledge", query=state['user_message'])
+    return {"retrieved_context": context}
 
 def generate_answer(state: AgentState) -> dict:
     agent= BaseAgent()

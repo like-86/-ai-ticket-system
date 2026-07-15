@@ -1,14 +1,7 @@
 from app.agents.base_agent import BaseAgent
+from app.services.knowledge_base import search_knowledge
 
 class RetrievalAgent(BaseAgent):
-    knowledge_base = {
-        "密码": "密码重置方法：在登录页面点击'忘记密码'，输入注册邮箱接收重置链接",
-        "账号": "账号激活：注册后请查收激活邮件，如未收到请检查垃圾邮箱",
-        "退款": "退款政策：购买后7天内可申请全额退款，退款将在3-5个工作日原路返回",
-        "价格": "定价方案：基础版免费，专业版99元/月，企业版联系销售定制",
-    }
-    def search(self,query: str) -> str:
-        for keyword , answer in self.knowledge_base.items():
-            if keyword in query:
-                return answer
-        return "未找到相关答案，请转人工客服处理"
+    def search(self, query: str) -> str:
+        return search_knowledge(query)
+

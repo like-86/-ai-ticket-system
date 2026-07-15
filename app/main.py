@@ -2,13 +2,21 @@ from fastapi import  FastAPI
 from fastapi.middleware.cors import  CORSMiddleware
 from app.config import settings
 from app.api import chat as chat_api
+from app.db.database import init_db
+from app.api import tickets as ticket_api
+from app.services.knowledge_base import init_knowledge_base
 
 #创建fastapi实例
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
 )
+#初始化
+init_db()
+init_knowledge_base()
+#接入路由
 app.include_router(chat_api.router)
+app.include_router(ticket_api.router)
 #注册 cors
 app.add_middleware(
     CORSMiddleware,

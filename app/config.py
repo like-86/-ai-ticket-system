@@ -17,7 +17,7 @@ class Settings(BaseSettings):
       VECTOR_DIMENSION: int = 1024
 
       # 数据库
-      DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/ai_ticket"
+      DATABASE_URL: str = "mysql+pymysql://root:123456@localhost:3306/ai_ticket"
       REDIS_URL: str = "redis://localhost:6379/0"
 
       class Config:
