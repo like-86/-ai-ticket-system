@@ -63,7 +63,7 @@ def list_knowledge():
             "content": results["documents"][i],
             "source": results["metadatas"][i].get("source", "unknown"),
         })
-        return entries
+    return entries
 #删除数据库内容
 def delete_knowledge(kid: str) -> bool:
     """删除一条知识"""

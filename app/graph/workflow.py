@@ -2,9 +2,13 @@ from langgraph.graph import StateGraph, MessagesState
 from app.tools.mcp_server import TOOLS
 from app.agents.base_agent import BaseAgent
 from langgraph.prebuilt import ToolNode
+from langchain_core.messages import SystemMessage
 
-
-
+SYSTEM_PROMPT = """你是一个专业的飞书客服助手。请遵循以下规则：
+ 1. 优先使用搜索工具查找知识库来回答问题
+ 2. 根据知识库内容回答，不要编造信息
+ 3. 用中文回答，简洁准确
+ 4. 如果用户问题超出知识库范围，请如实告知并建议创建工单"""
 
 class AgentState(MessagesState):
     final_reply: str = ""
@@ -60,6 +64,8 @@ async def run_agent_stream(user_message: str,session_id:str = None):
       history = get_history(session_id) if session_id else []
       new_msg = HumanMessage(content=user_message)
       input_messages = history + [new_msg]
+      if not history:
+          input_messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages
       input_data = {
           "messages":input_messages,
           "final_reply": "",
