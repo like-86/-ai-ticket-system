@@ -4,11 +4,13 @@ from app.agents.base_agent import BaseAgent
 from langgraph.prebuilt import ToolNode
 from langchain_core.messages import SystemMessage
 
-SYSTEM_PROMPT = """你是一个专业的飞书客服助手。请遵循以下规则：
+SYSTEM_PROMPT = """你是一个客服助手。请遵循以下规则：
  1. 优先使用搜索工具查找知识库来回答问题
  2. 根据知识库内容回答，不要编造信息
  3. 用中文回答，简洁准确
- 4. 如果用户问题超出知识库范围，请如实告知并建议创建工单"""
+ 4. 如果用户问题超出知识库范围，请如实告知并建议创建工单
+ 5. 你是一个专业的客服助手。请用纯文本回复，不要使用 Markdown 符号（如 **、-、* 等），不要使用编号列表。回答要简洁准确。
+ 6. 调用工具返回的结果也要纯文本回复，不要使用 Markdown 符号（如 **、-、* 等），不要使用编号列表。回答要简洁准确。"""
 
 class AgentState(MessagesState):
     final_reply: str = ""
@@ -46,8 +48,10 @@ def run_agent(user_message: str,session_id:str = None):
     from app.services.session import get_history, save_messages
     from langchain_core.messages import HumanMessage, AIMessage
     history = get_history(session_id) if session_id else []
-    new_msg = HumanMessage(content=user_message)
+    new_msg = HumanMessage(content=user_message + "\n(请用纯文本回复，不要使用任何 Markdown 符号)")
     messages = history + [new_msg]
+    if not history:
+        messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages
     result = graph.invoke({
           "messages":messages,
           "final_reply": "",
@@ -62,10 +66,10 @@ async def run_agent_stream(user_message: str,session_id:str = None):
       from app.services.session import get_history, save_messages
       from langchain_core.messages import HumanMessage, AIMessage
       history = get_history(session_id) if session_id else []
-      new_msg = HumanMessage(content=user_message)
+      new_msg = HumanMessage(content=user_message + "\n(请用纯文本回复，不要使用任何 Markdown 符号)")
       input_messages = history + [new_msg]
       if not history:
-          input_messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages
+          input_messages = [SystemMessage(content=SYSTEM_PROMPT)] + input_messages
       input_data = {
           "messages":input_messages,
           "final_reply": "",

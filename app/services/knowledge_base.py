@@ -33,14 +33,34 @@ def init_knowledge_base():
         )
     print(f"知识库初始化完成，共 {len(documents)} 条记录")
 
-def search_knowledge(query:str,top_k:int =2)->str:
-    results = collection.query(
-        query_texts=[query],
-        n_results=top_k,
-    )
-    if not results["documents"][0]:
-        return "未找到相关答案"
-    return "\n".join(results["documents"][0])
+def search_knowledge(query: str, top_k: int = 3) -> str:
+    all_docs = collection.get()
+    bigrams = [query[i:i+2] for i in range(len(query)-1)]
+
+    # 1. 关键词打分：匹配的双字词越多，得分越高
+    scored = []
+    for doc in all_docs["documents"]:
+        score = sum(1 for bg in bigrams if bg in doc)
+        if score > 0:
+            scored.append((score, doc))
+    scored.sort(key=lambda x: -x[0])  # 按得分从高到低
+
+    results = [doc for _, doc in scored[:top_k]]
+
+    # 2. 如果关键词没找够，向量检索补充
+    if len(results) < top_k:
+        vec_results = collection.query(query_texts=[query], n_results=top_k)
+        if vec_results["documents"][0]:
+            seen = set(results)
+            for doc in vec_results["documents"][0]:
+                if doc not in seen:
+                    results.append(doc)
+                    if len(results) >= top_k:
+                        break
+
+    if results:
+        return "\n".join(results[:top_k])
+    return "未找到相关答案"
 #增添数据库文档
 def add_knowledge(content:str,source:str = "manual")->str:
     """添加一条知识到向量库"""
