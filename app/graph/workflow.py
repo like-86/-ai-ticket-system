@@ -1,105 +1,59 @@
-from app.tools.mcp_server import TOOLS
 from langgraph.graph import StateGraph, MessagesState
-from app.agents.intent_agent import IntentAgent
+from app.tools.mcp_server import TOOLS
 from app.agents.base_agent import BaseAgent
+from langgraph.prebuilt import ToolNode
 
 
-
-# 工具查找函数
-def call_tool(name:str,**kwargs)->dict:
-    for tool in TOOLS:
-        if tool["name"]==name:
-            return tool["handler"](**kwargs)
-    raise ValueError(f"工具{name}不存在")
-
-#定义状态
 class AgentState(MessagesState):
-    intent: str="" #意图识别结果
-    user_message: str=""    #用户原始消息
-    final_reply: str=""        #最终回复
-    retrieved_context: str = ""
+    final_reply: str = ""
 
-#定义节点
-def classify_intent(state: AgentState) -> dict:
-    agent=IntentAgent()
-    intent = agent.classify(state["user_message"])
-    return {"intent":intent}
 
-def handle_ticket(state: AgentState) -> dict:
-    result = call_tool("create_ticket",title =f"用户请求:{state['user_message']}",description=state['user_message'])
+def agent_node(state: AgentState):
+    llm = BaseAgent().llm.bind_tools(TOOLS)
+    response = llm.invoke(state["messages"])
+    return {"messages": [response], "final_reply": response.content}
 
-    reply = f"[工单已创建] 工单编号{result['id']}，我们会尽快处理。您的请求：{state['user_message']}"
-    return {"final_reply":reply}
 
-def handle_inquiry(state: AgentState) -> dict:
-    agent=BaseAgent()
-    reply = agent.chat(f"请回答这个产品咨询问题:{state['user_message']}")
-    return {"final_reply":reply}
+def should_continue(state: AgentState):
+    last_msg = state["messages"][-1]
+    if last_msg.tool_calls:
+          return "tools"
+    return "__end__"
 
-def handle_chat(state: AgentState) -> dict:
-    agent=BaseAgent()
-    reply = agent.chat(state["user_message"])
-    return {"final_reply":reply}
-
-def retrieve_knowledge(state: AgentState) -> dict:
-    context = call_tool("search_knowledge", query=state['user_message'])
-    return {"retrieved_context": context}
-
-def generate_answer(state: AgentState) -> dict:
-    agent= BaseAgent()
-    prompt=f"""基于以下知识库内容回答用户问题。
-
-          知识库内容：
-          {state['retrieved_context']}
-        
-          用户问题：{state['user_message']}
-        
-          请用中文回答。"""
-    reply = agent.chat(prompt)
-    return {"final_reply": reply}
-#定义路由
-def route_after_intent(state:AgentState):
-    if state["intent"]=="ticket":
-        return "handle_ticket"
-    elif state["intent"]=="inquiry":
-        return "retrieve_knowledge"
-    elif state["intent"]=="chat":
-        return "handle_chat"
-#组装图
+#绘图
 def build_graph():
     workflow = StateGraph(AgentState)
-    # 添加节点
-    workflow.add_node("classify_intent",classify_intent)
-    workflow.add_node("handle_ticket",handle_ticket )
-    workflow.add_node("handle_inquiry", handle_inquiry)
-    workflow.add_node("handle_chat",handle_chat )
-    workflow.add_node("retrieve_knowledge",retrieve_knowledge)
-    workflow.add_node("generate_answer",generate_answer)
-    #设置入口
-    workflow.set_entry_point("classify_intent")
-    #设置条件路由
-    workflow.add_conditional_edges(
-        "classify_intent",
-        route_after_intent,
-    )
-    #设置出口
-    workflow.add_edge("handle_ticket","__end__")
-    workflow.add_edge("handle_inquiry", "__end__")
-    workflow.add_edge("handle_chat", "__end__")
-    workflow.add_edge("retrieve_knowledge", "generate_answer")
-    workflow.add_edge("generate_answer", "__end__")
+    workflow.add_node("agent", agent_node)
+    workflow.add_node("tools", ToolNode(TOOLS))
+
+    workflow.set_entry_point("agent")
+    workflow.add_conditional_edges("agent", should_continue)
+    workflow.add_edge("tools", "agent")   # tools 执行完回到 agent 继续思考
 
     return workflow.compile()
-graph = build_graph()
-def run_agent(user_message:str)->dict:
-    result = graph.invoke({
-        "user_message":user_message,
-        "intent":"",
-        "final_reply":"",
 
-    })
-    return {
-        "reply": result["final_reply"],
-        "intent": result["intent"],
-    }
+
+graph = build_graph()
+
+
+def run_agent(user_message: str):
+      result = graph.invoke({
+          "messages": [("human", user_message)],
+          "final_reply": "",
+      })
+      return {"reply": result["final_reply"]}
+
+async def run_agent_stream(user_message: str):
+      """流式运行，走完所有节点，逐 token 输出"""
+      input_data = {
+          "messages": [("human", user_message)],
+          "final_reply": "",
+      }
+
+      async for event in graph.astream_events(input_data, version="v2"):
+          if event["event"] == "on_chat_model_stream":
+              content = event["data"]["chunk"].content
+              if content:
+                  yield content
+
 

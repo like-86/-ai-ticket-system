@@ -13,8 +13,8 @@ class Settings(BaseSettings):
 
       # 模型
       LLM_MODEL: str = "deepseek-chat"
-      EMBEDDING_MODEL: str = "BAAI/bge-m3"
-      VECTOR_DIMENSION: int = 1024
+      #EMBEDDING_MODEL: str = "BAAI/bge-m3"
+      #VECTOR_DIMENSION: int = 1024
 
       # 数据库
       DATABASE_URL: str = "mysql+pymysql://root:123456@localhost:3306/ai_ticket"
