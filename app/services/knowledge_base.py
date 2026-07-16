@@ -1,4 +1,4 @@
-
+import uuid
 import chromadb
 #嵌入模型
 
@@ -41,3 +41,53 @@ def search_knowledge(query:str,top_k:int =2)->str:
     if not results["documents"][0]:
         return "未找到相关答案"
     return "\n".join(results["documents"][0])
+#增添数据库文档
+def add_knowledge(content:str,source:str = "manual")->str:
+    """添加一条知识到向量库"""
+    kid = str(uuid.uuid4())[:8]
+    collection.add(
+        ids=[kid],
+        documents=[content],
+        metadatas=[{"content": content, "source": source}],
+    )
+    return kid
+#展示数据库内容
+def list_knowledge():
+    results = collection.get()
+    if not results["ids"]:
+        return []
+    entries=[]
+    for i , kid in enumerate(results["ids"]):
+        entries.append({
+            "id": kid,
+            "content": results["documents"][i],
+            "source": results["metadatas"][i].get("source", "unknown"),
+        })
+        return entries
+#删除数据库内容
+def delete_knowledge(kid: str) -> bool:
+    """删除一条知识"""
+    collection.delete(ids=[kid])
+    return True
+#文本切块函数
+def chunk_text(text:str,chunk_size:int =200,overlap:int = 50)->list:
+    """把长文本切成小块，每块之间重叠 overlap 个字"""
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + chunk_size
+        chunk = text[start:end]
+        if chunk:
+            chunks.append(chunk)
+        start += chunk_size-overlap
+    return chunks
+
+
+def add_knowledge_from_text(text: str, source: str = "file") -> list:
+    """把文本切分后全部入库。返回生成的 ID 列表"""
+    chunks = chunk_text(text)
+    ids = []
+    for chunk in chunks:
+        kid = add_knowledge(chunk, source=source)
+        ids.append(kid)
+    return ids

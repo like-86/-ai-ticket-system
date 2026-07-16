@@ -1,7 +1,8 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import TicketsPanel from './TicketsPanel.vue'
-
+const sessionId = ref(localStorage.getItem('session_id') || crypto.randomUUID())
+  localStorage.setItem('session_id', sessionId.value)
 const messages = ref([
   { role: 'bot', content: '你好！我是 AI 工单助手，有什么可以帮你的？' }
 ])
@@ -26,7 +27,8 @@ async function sendMessage() {
       const res = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify({ message: text,
+            session_id: sessionId.value })
       })
 
       const reader = res.body.getReader()
