@@ -1,7 +1,10 @@
+from datetime import datetime,timedelta
+
 from app.config import settings
 from app.db.database import SessionLocal
 from app.db.models import User
 import bcrypt
+import jwt
 
 def create_user( username: str, password: str):
     """注册新用户"""
@@ -33,6 +36,6 @@ def authenticate_user(username:str, password:str):
         db.close()
 
 def create_access_token(user: User):
-    pyload = {"user_id":user.id,"username":user.username}
+    pyload = {"user_id":user.id,"username":user.username,"exp":datetime.utcnow() + timedelta(hours=settings.JWT_EXPIRE_HOURS)}
     token = jwt.encode(pyload,settings.JWT_SECRET_KEY,algorithm="HS256")
     return token

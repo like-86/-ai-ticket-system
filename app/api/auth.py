@@ -4,7 +4,7 @@ from app.db.database import SessionLocal
 from app.db.models import User
 import bcrypt
 
-from app.services.user_service import create_user, authenticate_user
+from app.services.user_service import create_user, authenticate_user, create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 class RegisterRequest(BaseModel):
@@ -27,4 +27,6 @@ def login(request: LoginRequest):
     user = authenticate_user(request.username, request.password)
     if user is None:
         raise HTTPException(401,"用户名或密码错误")
+    token = create_access_token(user)
+    return {"token":token,"message":"登录成功"}
 
