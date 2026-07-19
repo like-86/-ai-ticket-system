@@ -20,8 +20,9 @@ class Settings(BaseSettings):
       DATABASE_URL: str = "mysql+pymysql://root:123456@localhost:3306/ai_ticket"
       REDIS_URL: str = "redis://localhost:6379/0"
 
-      class Config:
-          env_file = ".env"
+      model_config = {"env_file": ".env"}
 
-
+      #token
+      JWT_SECRET_KEY: str = "change-this-in-production"  # 生产环境要改
+      JWT_EXPIRE_HOURS: int = 24
 settings = Settings()

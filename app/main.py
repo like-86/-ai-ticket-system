@@ -6,6 +6,7 @@ from app.db.database import init_db
 from app.api import tickets as ticket_api
 from app.api import knowledge as knowledge_api
 from app.services.knowledge_base import init_knowledge_base
+from app.api import auth as auth_api
 
 #创建fastapi实例
 app = FastAPI(
@@ -16,6 +17,7 @@ app = FastAPI(
 init_db()
 init_knowledge_base()
 #接入路由
+app.include_router(auth_api.router)
 app.include_router(chat_api.router)
 app.include_router(ticket_api.router)
 app.include_router(knowledge_api.router)
@@ -31,7 +33,7 @@ app.add_middleware(
 async def root():
     return {"message": settings.APP_NAME,
             "version": settings.APP_VERSION,
-            },
+            }
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(

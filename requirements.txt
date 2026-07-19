@@ -16,3 +16,6 @@ httpx
 sentence-transformers
 pymysql
 chromadb
+pytest
+pytest-asyncio
+httpx

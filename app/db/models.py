@@ -14,3 +14,11 @@ class Ticket(Base):
     priority = Column(String(10), default="normal")     # low / normal / high / urgent
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, autoincrement=True) #用户id
+    username = Column(String(50), nullable=False) #用户名
+    password = Column(String(100), nullable=False)#用户密码
+    created_at = Column(DateTime, default=datetime.now)#创建时间
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)#更新时间
