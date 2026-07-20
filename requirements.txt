@@ -19,3 +19,4 @@ chromadb
 pytest
 pytest-asyncio
 httpx
+PyJWT
