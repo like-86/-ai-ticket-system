@@ -1,4 +1,4 @@
-from conftest import client
+
 from app.services.user_service import create_user
 def test_auth_register_success():
     """注册新用户应该成功"""
