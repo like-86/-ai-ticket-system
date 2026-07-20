@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+
 from fastapi  import APIRouter
 from app.db.database import SessionLocal
 from app.db.models import Ticket
@@ -26,7 +28,7 @@ def read_ticket(ticket_id: int):
     ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
     db.close()
     if not ticket:
-        return{"error": "Ticket not found"}
+        raise HTTPException(404, "Ticket not found")
     return {
         "id": ticket.id,
         "title": ticket.title,

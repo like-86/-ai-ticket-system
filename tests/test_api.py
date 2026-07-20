@@ -59,3 +59,14 @@ def test_get_ticket_by_id(mock_chromadb,mock_token,client):
     assert data["title"] == "查询测试1"
     assert data["description"] == "测试描述"
     assert data["status"] == "pending"
+
+def test_no_token_returns_401(client):
+    """没带 token 访问受保护接口应该返回 401"""
+    response = client.get("/api/tickets")
+    assert response.status_code == 401
+
+def test_get_ticket_not_found(client,mock_token,mock_chromadb):
+    """查不存在的工单应该返回 404"""
+    response = client.get("/api/tickets/999999")
+    assert response.status_code == 404
+

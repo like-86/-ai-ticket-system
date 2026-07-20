@@ -23,7 +23,7 @@ async def middleware(request: Request, call_next):
     if request.url.path == "/api/auth/register" or request.url.path == "/api/auth/login":
         return await call_next(request)
     if not token or token == "":
-        return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+        return JSONResponse(status_code=401, content={"detail": "未登录"})
     else:
          return  await call_next(request)
 #初始化
