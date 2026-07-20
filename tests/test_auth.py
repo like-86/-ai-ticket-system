@@ -1,9 +1,5 @@
-from fastapi.testclient import TestClient
-from app.main import app
+from conftest import client
 from app.services.user_service import create_user
-
-client = TestClient(app)
-
 def test_auth_register_success():
     """注册新用户应该成功"""
     response = client.post("/api/auth/register",json={

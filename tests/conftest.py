@@ -1,8 +1,14 @@
 """pytest 全局共享配置"""
-import pytest
-from unittest.mock import MagicMock, patch
 import os
 os.environ["DATABASE_URL"] = "sqlite+pysqlite:///file::memory:?cache=shared&uri=true"
+from unittest.mock import MagicMock, patch
+import pytest
+from app.services.user_service import create_user
+from fastapi.testclient import TestClient
+from app.main import app
+
+
+
 @pytest.fixture
 def mock_chromadb():
     """模拟 ChromaDB 集合，让测试不连真实数据库"""
@@ -26,5 +32,21 @@ def mock_chromadb():
     mock_collection.query.side_effect = mock_query
     with patch("app.services.knowledge_base.collection", mock_collection):
         yield mock_collection
+
+
+@pytest.fixture
+def client():
+    return TestClient(app)
+
+@pytest.fixture
+def mock_token(client):
+
+    create_user(username="张三",password="123456")
+    response = client.post("/api/auth/login",json={"username":"张三","password":"123456"} )
+    assert response.status_code == 200
+    token = response.json()["token"]
+    client.headers["Authorization"] = f"Bearer {token}"
+    yield token
+    client.headers.pop("Authorization", None)
 
 

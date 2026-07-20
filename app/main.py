@@ -7,12 +7,25 @@ from app.api import tickets as ticket_api
 from app.api import knowledge as knowledge_api
 from app.services.knowledge_base import init_knowledge_base
 from app.api import auth as auth_api
+from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request
 
 #创建fastapi实例
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
 )
+# 注册中间件
+@app.middleware("http")
+async def middleware(request: Request, call_next):
+
+    token=request.headers.get("Authorization")
+    if request.url.path == "/api/auth/register" or request.url.path == "/api/auth/login":
+        return await call_next(request)
+    if not token or token == "":
+        return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    else:
+         return  await call_next(request)
 #初始化
 init_db()
 init_knowledge_base()
