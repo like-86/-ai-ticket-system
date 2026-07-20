@@ -23,6 +23,9 @@
 - **知识库 RAG** — ChromaDB 向量检索，支持上传文档自动切分入库
 - **工单系统** — LLM 判断需人工介入时自动创建工单，存入 MySQL
 - **知识管理 API** — 增删改查、上传 .txt 文件、自动切片
+- **用户认证** — JWT 登录鉴权，bcrypt 密码加密，全局中间件保护所有 API
+- **自动化测试** — pytest 全覆盖（纯函数、Service、API），Mock 外部依赖，SQLite 内存库替代 MySQL
+- **CI/CD** — GitHub Actions 每次推送自动跑测试
 
 ## 项目结构
 
