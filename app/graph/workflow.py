@@ -3,6 +3,8 @@ from app.tools.mcp_server import TOOLS
 from app.agents.base_agent import BaseAgent
 from langgraph.prebuilt import ToolNode
 from langchain_core.messages import SystemMessage
+import time
+import asyncio
 
 SYSTEM_PROMPT = """你是一个客服助手。请遵循以下规则：
  1. 优先使用搜索工具查找知识库来回答问题
@@ -10,15 +12,20 @@ SYSTEM_PROMPT = """你是一个客服助手。请遵循以下规则：
  3. 用中文回答，简洁准确
  4. 如果用户问题超出知识库范围，请如实告知并建议创建工单
  5. 你是一个专业的客服助手。请用纯文本回复，不要使用 Markdown 符号（如 **、-、* 等），不要使用编号列表。回答要简洁准确。
- 6. 调用工具返回的结果也要纯文本回复，不要使用 Markdown 符号（如 **、-、* 等），不要使用编号列表。回答要简洁准确。"""
+ 6. 调用工具返回的结果也要纯文本回复，不要使用 Markdown 符号（如 **、-、* 等），不要使用编号列表。回答要简洁准确。
+ 7. "对于简单的 FAQ 问题，直接调用工具搜索后回答，不要重复思考"""
 
 class AgentState(MessagesState):
     final_reply: str = ""
 
 
 def agent_node(state: AgentState):
+    t1 = time.time()
     llm = BaseAgent().llm.bind_tools(TOOLS)
+    t2 = time.time()
     response = llm.invoke(state["messages"])
+    t3 = time.time()
+    print(f"{t2-t1:.2f}:llm",f"{t3-t2:.2f}:response")
     return {"messages": [response], "final_reply": response.content}
 
 
@@ -63,6 +70,7 @@ def run_agent(user_message: str,session_id:str = None):
 
 async def run_agent_stream(user_message: str,session_id:str = None):
       """流式运行，走完所有节点，逐 token 输出"""
+      _t0 = time.time()
       from app.services.session import get_history, save_messages
       from langchain_core.messages import HumanMessage, AIMessage
       history = get_history(session_id) if session_id else []
@@ -82,9 +90,14 @@ async def run_agent_stream(user_message: str,session_id:str = None):
               if content:
                   full_reply += content
                   yield content
-      # 3. 流式结束后存历史
+      # 3. 流式结束后存历史，判断是否需要总结
       if session_id:
           all_messages = input_messages + [AIMessage(content=full_reply)]
-          save_messages(session_id, all_messages)
+          signal = save_messages(session_id, all_messages)
+          if signal == "summarize":
+              from app.services.session import summarize_and_store
+              asyncio.create_task(asyncio.to_thread(summarize_and_store, session_id))
+              print(f"📝 session {session_id} 触发后台总结")
+      print(f"⏱ 总耗时 {time.time()-_t0:.2f}s | 输入消息条数: {len(input_messages)}")
 
 

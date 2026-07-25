@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from app.graph.workflow import run_agent, run_agent_stream
 import json
 from fastapi.responses import StreamingResponse
+from fastapi import BackgroundTasks
 
 
 
@@ -22,7 +23,7 @@ def chat(request: ChatRequest):
     return ChatResponse(reply=result["reply"])
 #流式输出SSE
 @router.post("/stream")
-async def chat_stream(request: ChatRequest):
+async def chat_stream(request: ChatRequest,background_tasks:BackgroundTasks):
     generator = run_agent_stream(request.message,request.session_id or None)
     async def generate():
         async for token in generator:

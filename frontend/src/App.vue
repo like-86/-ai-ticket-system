@@ -1,7 +1,6 @@
 <script setup>
-  import ChatPage from './components/ChatPage.vue'
+  // 删掉无效导入，路由控制页面渲染
   </script>
-
   <template>
-    <ChatPage />
+    <router-view />
   </template>

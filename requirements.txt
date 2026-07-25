@@ -21,3 +21,5 @@ pytest-asyncio
 httpx
 PyJWT
 python-multipart
+vue-router@4
+axioselement-plus

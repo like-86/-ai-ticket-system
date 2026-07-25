@@ -8,3 +8,4 @@ chroma_data/
 resume.md
 .agents/
 .claude/
+node_modules

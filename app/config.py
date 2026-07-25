@@ -12,13 +12,13 @@ class Settings(BaseSettings):
       DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
 
       # 模型
-      LLM_MODEL: str = "deepseek-chat"
+      LLM_MODEL: str = "deepseek-v4-flash"
       #EMBEDDING_MODEL: str = "BAAI/bge-m3"
       #VECTOR_DIMENSION: int = 1024
 
       # 数据库
       DATABASE_URL: str = "mysql+pymysql://root:123456@localhost:3306/ai_ticket"
-      REDIS_URL: str = "redis://localhost:6379/0"
+      REDIS_URL: str = "redis://127.0.0.1:6379/0"
 
       model_config = {"env_file": ".env"}
 
