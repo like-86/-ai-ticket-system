@@ -39,7 +39,7 @@ def client():
     return TestClient(app)
 
 @pytest.fixture
-def mock_token():
+def mock_token(client):
 
     create_user(username="张三",password="123456")
     response = client.post("/api/auth/login",json={"username":"张三","password":"123456"} )
