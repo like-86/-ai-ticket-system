@@ -106,18 +106,22 @@ def smart_chunk(text: str, chunk_size: int = 500, separators=None) -> list:
     """按自然边界递归切分。
 
     1. 用最高优先级分隔符切
-    2. 块太大 → 降级到下一级分隔符递归
-    3. 没分隔符了或块够小 → 直接返回
+    2. 切不动（没找到分隔符）→ 降级到下一级
+    3. 所有分隔符都用完了 → 按字数硬切兜底
     """
     if separators is None:
         separators = ["\n\n", "\n", "。", "，"]
 
-    # 终止条件：文本本身够小，或者没有分隔符可用了
-    if not separators or len(text) <= chunk_size:
-        return [text]
+    # 所有分隔符都用完了 → 按字数硬切兜底
+    if not separators:
+        return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
-    sep = separators[0]          # 当前分隔符
-    parts = text.split(sep)      # 切一刀
+    sep = separators[0]
+    parts = text.split(sep)
+
+    # 当前分隔符没切出结果（文本里没有这个符号）→ 降级
+    if len(parts) == 1:
+        return smart_chunk(text, chunk_size, separators[1:])
 
     result = []
     for part in parts:
@@ -125,7 +129,7 @@ def smart_chunk(text: str, chunk_size: int = 500, separators=None) -> list:
         if not part:
             continue
         if len(part) <= chunk_size:
-            result.append(part)  # 够小，收下
+            result.append(part)
         else:
             # 太大 → 降级递归
             result.extend(smart_chunk(part, chunk_size, separators[1:]))
