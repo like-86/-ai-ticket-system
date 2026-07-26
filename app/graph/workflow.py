@@ -19,9 +19,16 @@ class AgentState(MessagesState):
     final_reply: str = ""
 
 
-llm = BaseAgent().llm.bind_tools(TOOLS)
+_llm = None
+
+def get_llm():
+    global _llm
+    if _llm is None:
+        _llm = BaseAgent().llm.bind_tools(TOOLS)
+    return _llm
+
 def agent_node(state: AgentState):
-    response = llm.invoke(state["messages"])
+    response = get_llm().invoke(state["messages"])
     return {"messages": [response], "final_reply": response.content}
 
 
