@@ -21,7 +21,7 @@ app = FastAPI(
 async def middleware(request: Request, call_next):
 
     token=request.headers.get("Authorization")
-    if request.url.path in ["/api/auth/register", "/api/auth/login", "/docs", "/openapi.json", "/favicon.ico", "/"]:
+    if request.url.path in ["/api/auth/register", "/api/auth/login", "/docs", "/openapi.json", "/favicon.ico"]:
         return await call_next(request)
     if not token:
         return JSONResponse(status_code=401, content={"detail": "未登录"})

@@ -19,13 +19,9 @@ class AgentState(MessagesState):
     final_reply: str = ""
 
 
+llm = BaseAgent().llm.bind_tools(TOOLS)
 def agent_node(state: AgentState):
-    t1 = time.time()
-    llm = BaseAgent().llm.bind_tools(TOOLS)
-    t2 = time.time()
     response = llm.invoke(state["messages"])
-    t3 = time.time()
-    print(f"{t2-t1:.2f}:llm",f"{t3-t2:.2f}:response")
     return {"messages": [response], "final_reply": response.content}
 
 
