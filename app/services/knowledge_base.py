@@ -90,17 +90,17 @@ def delete_knowledge(kid: str) -> bool:
     collection.delete(ids=[kid])
     return True
 #文本切块函数
-# def chunk_text(text:str,chunk_size:int =200,overlap:int = 50)->list:
-#     """把长文本切成小块，每块之间重叠 overlap 个字"""
-#     chunks = []
-#     start = 0
-#     while start < len(text):
-#         end = start + chunk_size
-#         chunk = text[start:end]
-#         if chunk:
-#             chunks.append(chunk)
-#         start += chunk_size-overlap
-#     return chunks
+def chunk_text(text:str,chunk_size:int =200,overlap:int = 50)->list:
+    """把长文本切成小块，每块之间重叠 overlap 个字"""
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + chunk_size
+        chunk = text[start:end]
+        if chunk:
+            chunks.append(chunk)
+        start += chunk_size-overlap
+    return chunks
 
 def smart_chunk(text: str, chunk_size: int = 500, separators=None) -> list:
     """按自然边界递归切分。
