@@ -102,10 +102,41 @@ def chunk_text(text:str,chunk_size:int =200,overlap:int = 50)->list:
         start += chunk_size-overlap
     return chunks
 
+def smart_chunk(text: str, chunk_size: int = 500, separators=None) -> list:
+    """按自然边界递归切分。
+
+    1. 用最高优先级分隔符切
+    2. 块太大 → 降级到下一级分隔符递归
+    3. 没分隔符了或块够小 → 直接返回
+    """
+    if separators is None:
+        separators = ["\n\n", "\n", "。", "，"]
+
+    # 终止条件：文本本身够小，或者没有分隔符可用了
+    if not separators or len(text) <= chunk_size:
+        return [text]
+
+    sep = separators[0]          # 当前分隔符
+    parts = text.split(sep)      # 切一刀
+
+    result = []
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+        if len(part) <= chunk_size:
+            result.append(part)  # 够小，收下
+        else:
+            # 太大 → 降级递归
+            result.extend(smart_chunk(part, chunk_size, separators[1:]))
+    return result
+
+
+
 
 def add_knowledge_from_text(text: str, source: str = "file") -> list:
     """把文本切分后全部入库。返回生成的 ID 列表"""
-    chunks = chunk_text(text)
+    chunks = smart_chunk(text)
     ids = []
     for chunk in chunks:
         kid = add_knowledge(chunk, source=source)
