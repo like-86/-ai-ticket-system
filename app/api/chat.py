@@ -1,9 +1,9 @@
 from  fastapi import  APIRouter
 from pydantic import BaseModel
-from app.graph.workflow import run_agent, run_agent_stream
+from app.graph.workflow import run_agent_stream
 import json
 from fastapi.responses import StreamingResponse
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, Request
 
 
 
@@ -18,15 +18,24 @@ class ChatResponse(BaseModel):
     session_id: str = ""
 
 @router.post("",response_model=ChatResponse)
-def chat(request: ChatRequest):
-    result = run_agent(request.message,request.session_id or None)
-    return ChatResponse(reply=result["reply"])
+async def chat(chat_req: ChatRequest):
+    """非流式接口：内部复用流式逻辑，攒满再返回"""
+    full_reply = ""
+    async for token in run_agent_stream(chat_req.message, chat_req.session_id or None):
+        full_reply += token
+    return ChatResponse(reply=full_reply)
 #流式输出SSE
 @router.post("/stream")
-async def chat_stream(request: ChatRequest,background_tasks:BackgroundTasks):
-    generator = run_agent_stream(request.message,request.session_id or None)
+async def chat_stream(chat_req: ChatRequest, http_request: Request, background_tasks:BackgroundTasks):
+    generator = run_agent_stream(
+        chat_req.message,
+        chat_req.session_id or None,
+        cancel_check=lambda: http_request.is_disconnected(),
+    )
     async def generate():
-        async for token in generator:
-            yield f"data: {json.dumps({'token': token, 'done': False})}\n\n"
-        yield f"data: {json.dumps({'token': '', 'done': True})}\n\n"
+        try:
+            async for token in generator:
+                yield f"data: {json.dumps({'token': token, 'done': False})}\n\n"
+        finally:
+            yield f"data: {json.dumps({'token': '', 'done': True})}\n\n"
     return StreamingResponse(generate(), media_type="text/event-stream")

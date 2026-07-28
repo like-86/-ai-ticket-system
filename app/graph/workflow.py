@@ -42,7 +42,7 @@ def should_continue(state: AgentState):
 def build_graph():
     workflow = StateGraph(AgentState)
     workflow.add_node("agent", agent_node)
-    workflow.add_node("tools", ToolNode(TOOLS))
+    workflow.add_node("tools", ToolNode(TOOLS, handle_tool_errors=True))
 
     workflow.set_entry_point("agent")
     workflow.add_conditional_edges("agent", should_continue)
@@ -71,7 +71,7 @@ def run_agent(user_message: str,session_id:str = None):
         save_messages(session_id, result["messages"])
     return {"reply": result["final_reply"]}
 
-async def run_agent_stream(user_message: str,session_id:str = None):
+async def run_agent_stream(user_message: str, session_id: str = None, cancel_check=None):
       """流式运行，走完所有节点，逐 token 输出"""
       _t0 = time.time()
       from app.services.session import get_history, save_messages
@@ -88,6 +88,10 @@ async def run_agent_stream(user_message: str,session_id:str = None):
       # 2. 流式输出，同时收集完整回复
       full_reply = ""
       async for event in graph.astream_events(input_data, version="v2"):
+          # 客户端断开时提前终止
+          if cancel_check and cancel_check():
+              print(f"⏹ 客户端断开，提前终止 session {session_id}")
+              break
           if event["event"] == "on_chat_model_stream":
               content = event["data"]["chunk"].content
               if content:
